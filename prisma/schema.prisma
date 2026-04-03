@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Usuários do sistema ───────────────────────────────────────────────────
+// ADMIN   → acesso ao painel /adm  (analistas do SENAI)
+// COMPANY → acesso ao painel /empresas (RH da empresa parceira)
+// Alunos acessam o /mural sem autenticação
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(COMPANY)
+  company   Company? // Preenchido apenas quando role = COMPANY
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ─── Empresa parceira ─────────────────────────────────────────────────────
+model Company {
+  id          Int    @id @default(autoincrement())
+  userId      Int    @unique
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String
+  cnpj        String?  @unique  // Visível apenas para admins
+  description String?  @db.Text // Sobre a empresa (visível no mural)
+  contact     String?           // Nome e telefone do responsável (apenas admins)
+
+  jobs        Job[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("companies")
+}
+
+// ─── Categorias de vagas ──────────────────────────────────────────────────
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  jobs      Job[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+// ─── Vagas de emprego ─────────────────────────────────────────────────────
+model Job {
+  id         Int      @id @default(autoincrement())
+  companyId  Int
+  company    Company  @relation(fields: [companyId], references: [id])
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  // Se true, o mural exibe "Empresa Confidencial" no lugar do nome real
+  companyConfidential Boolean @default(false)
+
+  title                  String
+  workLocation           String?
+  workSchedule           String?
+  responsibilities       String?  @db.Text
+  requiredQualifications String?  @db.Text
+  desiredQualifications  String?  @db.Text
+  benefits               String?  @db.Text
+
+  salaryType SalaryType @default(NEGOTIABLE)
+  salaryMin  String?
+  salaryMax  String?
+
+  applicationDeadline DateTime?
+  applicationLink     String?
+
+  // Fluxo de aprovação:
+  // Empresa cria (PENDING) → Admin aprova (ACTIVE) ou reprova (REJECTED)
+  // Empresa pode mover para IN_PROGRESS, COMPLETED ou INACTIVE
+  status          JobStatus @default(PENDING)
+  rejectionReason String?   // Preenchido pelo admin ao reprovar
+
+  lgpdConsent     Boolean @default(false)
+  senaiDisclaimer Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("jobs")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN   // Analista SENAI
+  COMPANY // RH da empresa parceira
+}
+
+enum JobStatus {
+  PENDING     // Aguardando aprovação do admin
+  ACTIVE      // Aprovada — visível no /mural
+  IN_PROGRESS // Em andamento — seleção em curso (empresa define)
+  COMPLETED   // Vaga preenchida (empresa define)
+  INACTIVE    // Pausada pela empresa
+  REJECTED    // Reprovada pelo admin
+}
+
+enum SalaryType {
+  FIXED      // Valor fixo: exibe salaryMin
+  RANGE      // Faixa: exibe "salaryMin a salaryMax"
+  NEGOTIABLE // À combinar
+}
