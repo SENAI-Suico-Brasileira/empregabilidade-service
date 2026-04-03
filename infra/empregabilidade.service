@@ -1,0 +1,36 @@
+##
+## Systemd unit — API Node.js do Portal de Empregabilidade SENAI
+##
+## Instalar:
+##   sudo cp empregabilidade.service /etc/systemd/system/
+##   sudo systemctl daemon-reload
+##   sudo systemctl enable empregabilidade
+##   sudo systemctl start empregabilidade
+##
+
+[Unit]
+Description=Empregabilidade SENAI - API Node.js
+Documentation=https://github.com/SENAI-Suico-Brasileira/empregabilidade-service
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/var/www/empregabilidade-service
+
+# Carrega as variáveis de ambiente do arquivo .env de produção
+EnvironmentFile=/var/www/empregabilidade-service/.env
+
+ExecStart=/usr/bin/node server.js
+
+# Reinicia automaticamente se o processo morrer
+Restart=always
+RestartSec=10
+
+# Limita logs para não encher o disco
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=empregabilidade-api
+
+[Install]
+WantedBy=multi-user.target
