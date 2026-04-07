@@ -5,6 +5,7 @@ const PUBLIC_JOB_SELECT = {
   id: true,
   companyConfidential: true,
   title: true,
+  contractType: true,
   workLocation: true,
   workSchedule: true,
   responsibilities: true,
@@ -21,12 +22,28 @@ const PUBLIC_JOB_SELECT = {
   company: { select: { name: true, description: true } },
 };
 
-/** Lista vagas ativas para o mural público, com filtro opcional por categoria. */
-async function listPublicJobs({ categoryId } = {}) {
+/**
+ * Lista vagas ativas para o mural público.
+ * Filtros opcionais: categoryId, search (busca em título e qualificações).
+ */
+async function listPublicJobs({ categoryId, search } = {}) {
+  const searchFilter = search?.trim()
+    ? {
+        OR: [
+          { title: { contains: search } },
+          { responsibilities: { contains: search } },
+          { requiredQualifications: { contains: search } },
+          { desiredQualifications: { contains: search } },
+          { benefits: { contains: search } },
+        ],
+      }
+    : {};
+
   return prisma.job.findMany({
     where: {
       status: "ACTIVE",
       ...(categoryId ? { categoryId: Number(categoryId) } : {}),
+      ...searchFilter,
     },
     select: PUBLIC_JOB_SELECT,
     orderBy: { createdAt: "desc" },
@@ -34,11 +51,11 @@ async function listPublicJobs({ categoryId } = {}) {
 }
 
 async function getPublicJob(id) {
-  const job = await prisma.job.findUnique({
-    where: { id: Number(id) },
+  const job = await prisma.job.findFirst({
+    where: { id: Number(id), status: "ACTIVE" },
     select: PUBLIC_JOB_SELECT,
   });
-  if (!job || job.status !== "ACTIVE") throw new Error("Vaga não encontrada.");
+  if (!job) throw new Error("Vaga não encontrada.");
   return job;
 }
 

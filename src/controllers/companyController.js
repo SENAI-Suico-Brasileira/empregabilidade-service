@@ -25,6 +25,14 @@ async function listOwnJobs(req, res, next) {
   }
 }
 
+async function listCompletedTemplates(req, res, next) {
+  try {
+    return res.json(await companyService.listCompletedTemplates(req.user.id));
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function createJob(req, res, next) {
   try {
     const { title, categoryId, lgpdConsent, senaiDisclaimer } = req.body;
@@ -47,13 +55,17 @@ async function createJob(req, res, next) {
 
 async function updateJobStatus(req, res, next) {
   try {
-    const { status } = req.body;
+    const { status, filledBy, pauseReason } = req.body;
     if (!status) {
       const err = new Error("Status é obrigatório.");
       err.statusCode = 400;
       return next(err);
     }
-    const job = await companyService.updateJobStatus(req.params.id, req.user.id, status);
+    const job = await companyService.updateJobStatus(req.params.id, req.user.id, {
+      status,
+      filledBy,
+      pauseReason,
+    });
     return res.json(job);
   } catch (err) {
     err.statusCode = err.statusCode ?? 400;
@@ -61,4 +73,11 @@ async function updateJobStatus(req, res, next) {
   }
 }
 
-module.exports = { getProfile, updateProfile, listOwnJobs, createJob, updateJobStatus };
+module.exports = {
+  getProfile,
+  updateProfile,
+  listOwnJobs,
+  listCompletedTemplates,
+  createJob,
+  updateJobStatus,
+};

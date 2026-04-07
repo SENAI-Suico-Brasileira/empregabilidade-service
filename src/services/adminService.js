@@ -6,19 +6,50 @@ const bcrypt = require("bcryptjs");
 async function getIndicators() {
   const [
     totalCompanies,
+    companiesWithActiveJobs,
     jobsByStatus,
+    jobsByContractType,
     jobsByCategory,
+    filledBySenai,
+    filledByOther,
   ] = await Promise.all([
+    // Total de empresas cadastradas
     prisma.company.count(),
+
+    // Empresas com pelo menos 1 vaga ativa
+    prisma.company.count({
+      where: { jobs: { some: { status: "ACTIVE" } } },
+    }),
+
+    // Contagem por status
     prisma.job.groupBy({ by: ["status"], _count: { id: true } }),
+
+    // Contagem por tipo de contrato (apenas vagas ativas)
+    prisma.job.groupBy({
+      by: ["contractType"],
+      where: { status: { in: ["ACTIVE", "IN_PROGRESS"] } },
+      _count: { id: true },
+    }),
+
+    // Contagem por categoria (vagas ativas)
     prisma.job.groupBy({
       by: ["categoryId"],
       where: { status: "ACTIVE" },
       _count: { id: true },
     }),
+
+    // Vagas preenchidas por aluno SENAI
+    prisma.job.count({
+      where: { status: "COMPLETED", filledBy: "SENAI_STUDENT" },
+    }),
+
+    // Vagas preenchidas por outros candidatos
+    prisma.job.count({
+      where: { status: "COMPLETED", filledBy: "OTHER" },
+    }),
   ]);
 
-  // Adiciona o nome da categoria aos contadores
+  // Enriquece jobsByCategory com o nome da categoria
   const categoryIds = jobsByCategory.map((j) => j.categoryId);
   const categories = await prisma.category.findMany({
     where: { id: { in: categoryIds } },
@@ -28,13 +59,19 @@ async function getIndicators() {
 
   return {
     totalCompanies,
+    companiesWithActiveJobs,
     jobsByStatus: Object.fromEntries(
       jobsByStatus.map((s) => [s.status, s._count.id])
+    ),
+    jobsByContractType: Object.fromEntries(
+      jobsByContractType.map((c) => [c.contractType, c._count.id])
     ),
     jobsByCategory: jobsByCategory.map((j) => ({
       categoryName: categoryMap[j.categoryId] ?? "Sem categoria",
       count: j._count.id,
     })),
+    filledBySenai,
+    filledByOther,
   };
 }
 

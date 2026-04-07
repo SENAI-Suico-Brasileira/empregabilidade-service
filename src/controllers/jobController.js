@@ -2,7 +2,12 @@ const jobService = require("../services/jobService");
 
 async function listPublicJobs(req, res, next) {
   try {
-    return res.json(await jobService.listPublicJobs({ categoryId: req.query.categoryId }));
+    return res.json(
+      await jobService.listPublicJobs({
+        categoryId: req.query.categoryId,
+        search: req.query.search,
+      })
+    );
   } catch (err) {
     return next(err);
   }

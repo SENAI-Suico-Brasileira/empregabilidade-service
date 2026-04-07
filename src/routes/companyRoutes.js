@@ -10,6 +10,7 @@ router.use(authMiddleware, requireRole("COMPANY"));
 router.get("/perfil", companyController.getProfile);
 router.put("/perfil", companyController.updateProfile);
 
+router.get("/vagas/templates", companyController.listCompletedTemplates); // vagas preenchidas para usar como base
 router.get("/vagas", companyController.listOwnJobs);
 router.post("/vagas", companyController.createJob);
 router.patch("/vagas/:id/status", companyController.updateJobStatus);

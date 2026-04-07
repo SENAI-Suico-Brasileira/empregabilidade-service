@@ -18,7 +18,7 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(COMPANY)
-  company   Company? // Preenchido apenas quando role = COMPANY
+  company   Company?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -32,13 +32,13 @@ model Company {
   user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   name        String
-  cnpj        String?  @unique  // Visível apenas para admins
-  description String?  @db.Text // Sobre a empresa (visível no mural)
-  contact     String?           // Nome e telefone do responsável (apenas admins)
+  cnpj        String?  @unique
+  description String?  @db.Text
+  contact     String?
 
-  jobs        Job[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  jobs      Job[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("companies")
 }
@@ -63,7 +63,6 @@ model Job {
   categoryId Int
   category   Category @relation(fields: [categoryId], references: [id])
 
-  // Se true, o mural exibe "Empresa Confidencial" no lugar do nome real
   companyConfidential Boolean @default(false)
 
   title                  String
@@ -74,6 +73,9 @@ model Job {
   desiredQualifications  String?  @db.Text
   benefits               String?  @db.Text
 
+  // Tipo de contrato — usado nos indicadores do admin e visível no mural
+  contractType ContractType @default(OTHER)
+
   salaryType SalaryType @default(NEGOTIABLE)
   salaryMin  String?
   salaryMax  String?
@@ -83,9 +85,16 @@ model Job {
 
   // Fluxo de aprovação:
   // Empresa cria (PENDING) → Admin aprova (ACTIVE) ou reprova (REJECTED)
-  // Empresa pode mover para IN_PROGRESS, COMPLETED ou INACTIVE
+  // Empresa pode mover: ACTIVE → IN_PROGRESS, INACTIVE ou COMPLETED
+  // COMPLETED é estado terminal — não pode ser revertido
   status          JobStatus @default(PENDING)
   rejectionReason String?   // Preenchido pelo admin ao reprovar
+
+  // Preenchido pela empresa ao marcar como COMPLETED (obrigatório)
+  filledBy FilledBy?
+
+  // Preenchido pela empresa ao marcar como INACTIVE (obrigatório)
+  pauseReason String?
 
   lgpdConsent     Boolean @default(false)
   senaiDisclaimer Boolean @default(false)
@@ -107,9 +116,22 @@ enum JobStatus {
   PENDING     // Aguardando aprovação do admin
   ACTIVE      // Aprovada — visível no /mural
   IN_PROGRESS // Em andamento — seleção em curso (empresa define)
-  COMPLETED   // Vaga preenchida (empresa define)
-  INACTIVE    // Pausada pela empresa
+  COMPLETED   // Vaga preenchida — estado terminal (empresa define)
+  INACTIVE    // Pausada pela empresa (requer pauseReason)
   REJECTED    // Reprovada pelo admin
+}
+
+enum ContractType {
+  CLT        // Carteira assinada
+  APPRENTICE // Jovem Aprendiz
+  INTERNSHIP // Estágio
+  PJ         // Pessoa Jurídica
+  OTHER      // Outro / Não informado
+}
+
+enum FilledBy {
+  SENAI_STUDENT // Aluno ou egresso do SENAI
+  OTHER         // Outro candidato
 }
 
 enum SalaryType {
