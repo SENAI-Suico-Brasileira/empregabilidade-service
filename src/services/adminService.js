@@ -53,9 +53,9 @@ async function getIndicators() {
   const categoryIds = jobsByCategory.map((j) => j.categoryId);
   const categories = await prisma.category.findMany({
     where: { id: { in: categoryIds } },
-    select: { id: true, name: true },
+    select: { id: true, name: true, slug: true },
   });
-  const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c.name]));
+  const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c]));
 
   return {
     totalCompanies,
@@ -67,7 +67,8 @@ async function getIndicators() {
       jobsByContractType.map((c) => [c.contractType, c._count.id])
     ),
     jobsByCategory: jobsByCategory.map((j) => ({
-      categoryName: categoryMap[j.categoryId] ?? "Sem categoria",
+      categoryName: categoryMap[j.categoryId]?.name ?? "Sem categoria",
+      categorySlug: categoryMap[j.categoryId]?.slug ?? null,
       count: j._count.id,
     })),
     filledBySenai,
@@ -81,8 +82,8 @@ async function listAllJobs({ status } = {}) {
   return prisma.job.findMany({
     where: status ? { status } : undefined,
     include: {
-      company: { select: { id: true, name: true } },
-      category: { select: { id: true, name: true } },
+      company:  { select: { id: true, name: true } },
+      category: { select: { id: true, name: true, slug: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -119,7 +120,10 @@ async function getCompany(id) {
     where: { id: Number(id) },
     include: {
       user: { select: { id: true, name: true, email: true } },
-      jobs: { include: { category: true }, orderBy: { createdAt: "desc" } },
+      jobs: {
+        include: { category: { select: { id: true, name: true, slug: true } } },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
   if (!company) throw new Error("Empresa não encontrada.");

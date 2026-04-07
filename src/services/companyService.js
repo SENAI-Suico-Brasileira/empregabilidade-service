@@ -34,7 +34,7 @@ async function listOwnJobs(userId) {
 
   return prisma.job.findMany({
     where: { companyId: company.id },
-    include: { category: { select: { id: true, name: true } } },
+    include: { category: { select: { id: true, name: true, slug: true } } },
     orderBy: { createdAt: "desc" },
   });
 }
@@ -62,7 +62,7 @@ async function listCompletedTemplates(userId) {
       salaryType: true,
       salaryMin: true,
       salaryMax: true,
-      category: { select: { id: true, name: true } },
+      category: { select: { id: true, name: true, slug: true } },
     },
     orderBy: { updatedAt: "desc" },
     take: 10,
