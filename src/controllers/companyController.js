@@ -55,7 +55,7 @@ async function createJob(req, res, next) {
 
 async function updateJobStatus(req, res, next) {
   try {
-    const { status, filledBy, pauseReason } = req.body;
+    const { status, filledBy, filledStudentName, pauseReason } = req.body;
     if (!status) {
       const err = new Error("Status é obrigatório.");
       err.statusCode = 400;
@@ -64,6 +64,7 @@ async function updateJobStatus(req, res, next) {
     const job = await companyService.updateJobStatus(req.params.id, req.user.id, {
       status,
       filledBy,
+      filledStudentName,
       pauseReason,
     });
     return res.json(job);

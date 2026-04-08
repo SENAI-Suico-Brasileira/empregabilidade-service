@@ -73,16 +73,41 @@ async function createJob(userId, data) {
   const company = await prisma.company.findUnique({ where: { userId: Number(userId) } });
   if (!company) throw new Error("Empresa não encontrada.");
 
+  const {
+    categoryId, contractType, applicationDeadline,
+    contactEmail, contactPhone, contactLink,
+    // Remover campos calculados que não devem ir para o create
+    lgpdConsent, senaiDisclaimer,
+    companyConfidential,
+    title, workLocation, workSchedule,
+    responsibilities, requiredQualifications, desiredQualifications,
+    benefits, salaryType, salaryMin, salaryMax, applicationLink,
+  } = data;
+
   return prisma.job.create({
     data: {
-      ...data,
       companyId: company.id,
-      categoryId: Number(data.categoryId),
-      contractType: data.contractType || "OTHER",
+      categoryId: Number(categoryId),
+      contractType: contractType || "OTHER",
       status: "PENDING",
-      applicationDeadline: data.applicationDeadline
-        ? new Date(data.applicationDeadline)
-        : null,
+      applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : null,
+      contactEmail:  contactEmail  || null,
+      contactPhone:  contactPhone  || null,
+      contactLink:   contactLink   || null,
+      lgpdConsent:   Boolean(lgpdConsent),
+      senaiDisclaimer: Boolean(senaiDisclaimer),
+      companyConfidential: Boolean(companyConfidential),
+      title,
+      workLocation:           workLocation           || null,
+      workSchedule:           workSchedule           || null,
+      responsibilities:       responsibilities       || null,
+      requiredQualifications: requiredQualifications || null,
+      desiredQualifications:  desiredQualifications  || null,
+      benefits:               benefits               || null,
+      salaryType:  salaryType  || "NEGOTIABLE",
+      salaryMin:   salaryMin   || null,
+      salaryMax:   salaryMax   || null,
+      applicationLink: applicationLink || null,
     },
     include: { category: true, company: { select: { name: true } } },
   });
@@ -95,7 +120,7 @@ async function createJob(userId, data) {
  * - COMPLETED exige filledBy (obrigatório: SENAI_STUDENT ou OTHER)
  * - INACTIVE exige pauseReason (obrigatório)
  */
-async function updateJobStatus(jobId, userId, { status, filledBy, pauseReason }) {
+async function updateJobStatus(jobId, userId, { status, filledBy, filledStudentName, pauseReason }) {
   if (!COMPANY_ALLOWED_STATUSES.includes(status)) {
     const err = new Error(`Status inválido. Permitidos: ${COMPANY_ALLOWED_STATUSES.join(", ")}.`);
     err.statusCode = 400;
@@ -135,7 +160,10 @@ async function updateJobStatus(jobId, userId, { status, filledBy, pauseReason })
     where: { id: Number(jobId) },
     data: {
       status,
-      filledBy: status === "COMPLETED" ? filledBy : undefined,
+      filledBy:          status === "COMPLETED" ? filledBy          : undefined,
+      filledStudentName: status === "COMPLETED" && filledBy === "SENAI_STUDENT"
+        ? (filledStudentName?.trim() || null)
+        : undefined,
       pauseReason: status === "INACTIVE" ? pauseReason : undefined,
     },
   });
