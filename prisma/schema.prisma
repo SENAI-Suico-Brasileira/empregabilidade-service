@@ -83,6 +83,12 @@ model Job {
   applicationDeadline DateTime?
   applicationLink     String?
 
+  // Contato divulgado apenas após candidatura
+  // Preenchido pela empresa ao criar/editar a vaga
+  contactEmail String?
+  contactPhone String?
+  contactLink  String?
+
   // Fluxo de aprovação:
   // Empresa cria (PENDING) → Admin aprova (ACTIVE) ou reprova (REJECTED)
   // Empresa pode mover: ACTIVE → IN_PROGRESS, INACTIVE ou COMPLETED
@@ -93,16 +99,58 @@ model Job {
   // Preenchido pela empresa ao marcar como COMPLETED (obrigatório)
   filledBy FilledBy?
 
+  // Quando filledBy = SENAI_STUDENT, empresa pode registrar o nome do aluno
+  filledStudentName String?
+
   // Preenchido pela empresa ao marcar como INACTIVE (obrigatório)
   pauseReason String?
 
   lgpdConsent     Boolean @default(false)
   senaiDisclaimer Boolean @default(false)
 
+  applications Application[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("jobs")
+}
+
+// ─── Candidato (aluno/egresso que se candida via mural) ────────────────────
+// Sem login: identificado pelo CPF. Se já se candidatou antes, reutiliza o perfil.
+model Applicant {
+  id        Int          @id @default(autoincrement())
+  cpf       String       @unique
+
+  name      String
+  birthDate DateTime     @db.Date
+  modality  Modality     // Modelo de ensino no SENAI
+  className String?      // Nome da turma
+  classYear Int?         // Ano de conclusão / ingresso
+
+  lgpdConsent Boolean @default(false)
+
+  applications Application[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("applicants")
+}
+
+// ─── Candidatura (relação candidato ↔ vaga) ───────────────────────────────
+model Application {
+  id          Int       @id @default(autoincrement())
+  applicantId Int
+  applicant   Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  jobId       Int
+  job         Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  // Um candidato só pode se candidatar uma vez por vaga
+  @@unique([applicantId, jobId])
+  @@map("applications")
 }
 
 // ─── Enums ────────────────────────────────────────────────────────────────
@@ -138,4 +186,13 @@ enum SalaryType {
   FIXED      // Valor fixo: exibe salaryMin
   RANGE      // Faixa: exibe "salaryMin a salaryMax"
   NEGOTIABLE // À combinar
+}
+
+enum Modality {
+  FIC           // Formação Inicial e Continuada
+  TECNICO       // Ensino Técnico
+  CAI           // Curso de Aprendizagem Industrial
+  SUPERIOR      // Ensino Superior
+  POS_GRADUACAO // Pós-Graduação
+  EGRESSO       // Egresso (já concluiu)
 }
