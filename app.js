@@ -5,10 +5,14 @@ const errorHandler = require("./src/middlewares/errorHandler");
 
 const app = express();
 
-// Suporta múltiplas origens separadas por vírgula em CORS_ORIGIN
-const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
-  .split(",")
-  .map((o) => o.trim());
+// Origens sempre permitidas (produção) + extras via CORS_ORIGIN (dev ou outros)
+const allowedOrigins = [
+  "https://empregabilidade-web.vercel.app",
+  ...( process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+    : ["http://localhost:5173"]
+  ),
+];
 
 app.use(
   cors({
