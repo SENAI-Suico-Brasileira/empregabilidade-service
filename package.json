@@ -6,8 +6,8 @@
   "type": "commonjs",
   "scripts": {
     "dev":               "NODE_ENV=development nodemon server.js",
+    "build":             "prisma generate",
     "start":             "NODE_ENV=production node server.js",
-    "db:generate":       "prisma generate",
     "db:push":           "prisma db push",
     "db:push:prod":      "prisma db push --skip-generate",
     "db:migrate":        "prisma migrate dev",

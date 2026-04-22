@@ -5,8 +5,24 @@ const errorHandler = require("./src/middlewares/errorHandler");
 
 const app = express();
 
-// Middlewares globais
-app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173" }));
+// Suporta múltiplas origens separadas por vírgula em CORS_ORIGIN
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim());
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Permite requisições sem origin (curl, Postman, server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS not allowed"));
+      }
+    },
+  })
+);
+
 app.use(express.json());
 
 // Todas as rotas da API sob o prefixo /api
