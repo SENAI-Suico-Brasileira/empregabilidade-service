@@ -125,8 +125,9 @@ model Applicant {
   name      String
   birthDate DateTime     @db.Date
   modality  Modality     // Modelo de ensino no SENAI
-  className String?      // Nome da turma
-  classYear Int?         // Ano de conclusão / ingresso
+  className  String?     // Nome da turma
+  classYear  Int?        // Ano de conclusão / ingresso
+  classHours Int?        // Carga horária — usado apenas para FIC
 
   lgpdConsent Boolean @default(false)
 

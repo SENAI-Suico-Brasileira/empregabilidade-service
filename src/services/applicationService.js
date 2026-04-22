@@ -16,6 +16,7 @@ async function findApplicantByCpf(cpf, jobId) {
       modality: true,
       className: true,
       classYear: true,
+      classHours: true,
     },
   });
 
@@ -30,11 +31,12 @@ async function findApplicantByCpf(cpf, jobId) {
 
   return {
     found: true,
-    name:      applicant.name,
-    birthDate: applicant.birthDate,
-    modality:  applicant.modality,
-    className: applicant.className,
-    classYear: applicant.classYear,
+    name:       applicant.name,
+    birthDate:  applicant.birthDate,
+    modality:   applicant.modality,
+    className:  applicant.className,
+    classYear:  applicant.classYear,
+    classHours: applicant.classHours,
   };
 }
 
@@ -55,6 +57,7 @@ async function apply(jobId, applicantData) {
     modality,
     className,
     classYear,
+    classHours,
     lgpdConsent,
   } = applicantData;
 
@@ -91,8 +94,9 @@ async function apply(jobId, applicantData) {
       name,
       birthDate: new Date(birthDate),
       modality,
-      className: className || null,
-      classYear: classYear ? Number(classYear) : null,
+      className:  className  || null,
+      classYear:  classYear  ? Number(classYear)  : null,
+      classHours: classHours ? Number(classHours) : null,
       lgpdConsent: true,
     },
     create: {
@@ -100,8 +104,9 @@ async function apply(jobId, applicantData) {
       name,
       birthDate: new Date(birthDate),
       modality,
-      className: className || null,
-      classYear: classYear ? Number(classYear) : null,
+      className:  className  || null,
+      classYear:  classYear  ? Number(classYear)  : null,
+      classHours: classHours ? Number(classHours) : null,
       lgpdConsent: true,
     },
   });
