@@ -5,7 +5,7 @@ const errorHandler = require("./src/middlewares/errorHandler");
 
 const app = express();
 
-// Origens sempre permitidas (produção) + extras via CORS_ORIGIN (dev ou outros)
+// Origens permitidas: produção (hardcoded) + extras via CORS_ORIGIN
 const allowedOrigins = [
   "https://empregabilidade-web.vercel.app",
   ...( process.env.CORS_ORIGIN
