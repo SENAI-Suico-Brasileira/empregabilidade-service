@@ -19,5 +19,7 @@ router.get("/empresas", adminController.listCompanies);
 router.post("/empresas", adminController.createCompany);
 router.get("/empresas/:id", adminController.getCompany);
 router.put("/empresas/:id", adminController.updateCompany);
+router.patch("/empresas/:id/toggle-ativo", adminController.toggleCompanyActive);
+router.post("/empresas/:id/resetar-senha", adminController.resetCompanyPassword);
 
 module.exports = router;

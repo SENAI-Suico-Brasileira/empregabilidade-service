@@ -79,6 +79,27 @@ async function updateJobStatus(req, res, next) {
   }
 }
 
+async function changePassword(req, res, next) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      const err = new Error("Senha atual e nova senha são obrigatórias.");
+      err.statusCode = 400;
+      return next(err);
+    }
+    if (newPassword.length < 6) {
+      const err = new Error("A nova senha deve ter ao menos 6 caracteres.");
+      err.statusCode = 400;
+      return next(err);
+    }
+    await companyService.changePassword(req.user.id, currentPassword, newPassword);
+    return res.json({ message: "Senha alterada com sucesso." });
+  } catch (err) {
+    err.statusCode = err.statusCode ?? 400;
+    return next(err);
+  }
+}
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -86,4 +107,5 @@ module.exports = {
   listCompletedTemplates,
   createJob,
   updateJobStatus,
+  changePassword,
 };

@@ -13,6 +13,8 @@ async function login(email, password) {
   const passwordMatch = await bcrypt.compare(password, user.password);
   if (!passwordMatch) throw new Error("Credenciais inválidas.");
 
+  if (!user.active) throw new Error("Conta desativada. Entre em contato com o SENAI.");
+
   const tokenPayload = {
     id: user.id,
     email: user.email,

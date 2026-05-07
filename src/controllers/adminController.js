@@ -73,6 +73,32 @@ async function updateCompany(req, res, next) {
   }
 }
 
+async function toggleCompanyActive(req, res, next) {
+  try {
+    const result = await adminService.toggleCompanyActive(req.params.id);
+    return res.json(result);
+  } catch (err) {
+    err.statusCode = err.statusCode ?? 400;
+    return next(err);
+  }
+}
+
+async function resetCompanyPassword(req, res, next) {
+  try {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 6) {
+      const err = new Error("A nova senha deve ter ao menos 6 caracteres.");
+      err.statusCode = 400;
+      return next(err);
+    }
+    await adminService.resetCompanyPassword(req.params.id, newPassword);
+    return res.json({ message: "Senha redefinida com sucesso." });
+  } catch (err) {
+    err.statusCode = err.statusCode ?? 400;
+    return next(err);
+  }
+}
+
 module.exports = {
   getIndicators,
   listAllJobs,
@@ -82,4 +108,6 @@ module.exports = {
   getCompany,
   createCompany,
   updateCompany,
+  toggleCompanyActive,
+  resetCompanyPassword,
 };

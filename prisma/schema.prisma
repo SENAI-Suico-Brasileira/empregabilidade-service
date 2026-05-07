@@ -18,6 +18,7 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(COMPANY)
+  active    Boolean  @default(true)
   company   Company?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

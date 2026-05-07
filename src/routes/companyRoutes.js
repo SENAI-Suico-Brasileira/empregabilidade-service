@@ -10,6 +10,7 @@ router.use(authMiddleware, requireRole("COMPANY"));
 
 router.get("/perfil", companyController.getProfile);
 router.put("/perfil", companyController.updateProfile);
+router.put("/perfil/senha", companyController.changePassword);
 
 router.get("/vagas/templates", companyController.listCompletedTemplates);
 router.get("/vagas", companyController.listOwnJobs);

@@ -108,7 +108,7 @@ async function rejectJob(id, reason) {
 async function listCompanies() {
   return prisma.company.findMany({
     include: {
-      user: { select: { id: true, name: true, email: true } },
+      user: { select: { id: true, name: true, email: true, active: true } },
       _count: { select: { jobs: true } },
     },
     orderBy: { name: "asc" },
@@ -119,7 +119,7 @@ async function getCompany(id) {
   const company = await prisma.company.findUnique({
     where: { id: Number(id) },
     include: {
-      user: { select: { id: true, name: true, email: true } },
+      user: { select: { id: true, name: true, email: true, active: true } },
       jobs: {
         include: { category: { select: { id: true, name: true, slug: true } } },
         orderBy: { createdAt: "desc" },
@@ -155,6 +155,32 @@ async function updateCompany(id, { name, cnpj, description, contact }) {
   });
 }
 
+async function toggleCompanyActive(id) {
+  const company = await prisma.company.findUnique({
+    where: { id: Number(id) },
+    select: { userId: true, user: { select: { active: true } } },
+  });
+  if (!company) throw Object.assign(new Error("Empresa não encontrada."), { statusCode: 404 });
+
+  return prisma.user.update({
+    where: { id: company.userId },
+    data: { active: !company.user.active },
+    select: { active: true },
+  });
+}
+
+async function resetCompanyPassword(id, newPassword) {
+  const bcrypt = require("bcryptjs");
+  const company = await prisma.company.findUnique({
+    where: { id: Number(id) },
+    select: { userId: true },
+  });
+  if (!company) throw Object.assign(new Error("Empresa não encontrada."), { statusCode: 404 });
+
+  const hashed = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({ where: { id: company.userId }, data: { password: hashed } });
+}
+
 module.exports = {
   getIndicators,
   listAllJobs,
@@ -164,4 +190,6 @@ module.exports = {
   getCompany,
   createCompany,
   updateCompany,
+  toggleCompanyActive,
+  resetCompanyPassword,
 };

@@ -169,6 +169,18 @@ async function updateJobStatus(jobId, userId, { status, filledBy, filledStudentN
   });
 }
 
+async function changePassword(userId, currentPassword, newPassword) {
+  const bcrypt = require("bcryptjs");
+  const user = await prisma.user.findUnique({ where: { id: Number(userId) } });
+  if (!user) throw Object.assign(new Error("Usuário não encontrado."), { statusCode: 404 });
+
+  const match = await bcrypt.compare(currentPassword, user.password);
+  if (!match) throw Object.assign(new Error("Senha atual incorreta."), { statusCode: 400 });
+
+  const hashed = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({ where: { id: Number(userId) }, data: { password: hashed } });
+}
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -176,4 +188,5 @@ module.exports = {
   listCompletedTemplates,
   createJob,
   updateJobStatus,
+  changePassword,
 };
