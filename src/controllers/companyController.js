@@ -35,9 +35,14 @@ async function listCompletedTemplates(req, res, next) {
 
 async function createJob(req, res, next) {
   try {
-    const { title, categoryId, lgpdConsent, senaiDisclaimer } = req.body;
+    const { title, categoryId, lgpdConsent, senaiDisclaimer, contactEmail, contactPhone, contactLink } = req.body;
     if (!title || !categoryId) {
       const err = new Error("Título e categoria são obrigatórios.");
+      err.statusCode = 400;
+      return next(err);
+    }
+    if (!contactEmail?.trim() && !contactPhone?.trim() && !contactLink?.trim()) {
+      const err = new Error("Informe ao menos uma forma de contato (e-mail, telefone ou link de inscrição).");
       err.statusCode = 400;
       return next(err);
     }
