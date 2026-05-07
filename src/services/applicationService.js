@@ -1,10 +1,11 @@
 const prisma = require("../lib/prisma");
 
 /**
- * Verifica se já existe um candidato com o CPF informado.
+ * Verifica se já existe um candidato com o CPF informado e,
+ * se houver, se já se candidatou à vaga especificada.
  * Retorna apenas os dados necessários para pré-preencher o formulário.
  */
-async function findApplicantByCpf(cpf) {
+async function findApplicantByCpf(cpf, jobId) {
   const clean = cleanCpf(cpf);
   const applicant = await prisma.applicant.findUnique({
     where: { cpf: clean },
@@ -15,9 +16,28 @@ async function findApplicantByCpf(cpf) {
       modality: true,
       className: true,
       classYear: true,
+      classHours: true,
     },
   });
-  return applicant; // null se não encontrado
+
+  if (!applicant) return { found: false };
+
+  if (jobId) {
+    const existing = await prisma.application.findUnique({
+      where: { applicantId_jobId: { applicantId: applicant.id, jobId: Number(jobId) } },
+    });
+    if (existing) return { found: true, alreadyApplied: true };
+  }
+
+  return {
+    found: true,
+    name:       applicant.name,
+    birthDate:  applicant.birthDate,
+    modality:   applicant.modality,
+    className:  applicant.className,
+    classYear:  applicant.classYear,
+    classHours: applicant.classHours,
+  };
 }
 
 /**
@@ -37,6 +57,7 @@ async function apply(jobId, applicantData) {
     modality,
     className,
     classYear,
+    classHours,
     lgpdConsent,
   } = applicantData;
 
@@ -73,8 +94,9 @@ async function apply(jobId, applicantData) {
       name,
       birthDate: new Date(birthDate),
       modality,
-      className: className || null,
-      classYear: classYear ? Number(classYear) : null,
+      className:  className  || null,
+      classYear:  classYear  ? Number(classYear)  : null,
+      classHours: classHours ? Number(classHours) : null,
       lgpdConsent: true,
     },
     create: {
@@ -82,8 +104,9 @@ async function apply(jobId, applicantData) {
       name,
       birthDate: new Date(birthDate),
       modality,
-      className: className || null,
-      classYear: classYear ? Number(classYear) : null,
+      className:  className  || null,
+      classYear:  classYear  ? Number(classYear)  : null,
+      classHours: classHours ? Number(classHours) : null,
       lgpdConsent: true,
     },
   });

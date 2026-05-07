@@ -3,17 +3,8 @@ const applicationService = require("../services/applicationService");
 /** GET /api/jobs/:id/applicants/check?cpf=XXX */
 async function checkCpf(req, res, next) {
   try {
-    const applicant = await applicationService.findApplicantByCpf(req.query.cpf || "");
-    // Não revelar dados sensíveis — retorna apenas flag + dados para pré-preencher
-    if (!applicant) return res.json({ found: false });
-    return res.json({
-      found: true,
-      name:      applicant.name,
-      birthDate: applicant.birthDate,
-      modality:  applicant.modality,
-      className: applicant.className,
-      classYear: applicant.classYear,
-    });
+    const result = await applicationService.findApplicantByCpf(req.query.cpf || "", req.params.id);
+    return res.json(result);
   } catch (err) {
     return next(err);
   }
